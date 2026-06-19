@@ -1,0 +1,34 @@
+# Camera Configuration
+# One entry per camera. Coordinates are pixel positions on the UNDISTORTED frame
+# at the resolution produced after the resize_width setting in pipeline.yaml.
+#
+# How to set these up:
+#   Run:  python scripts/draw_zones.py --video data/samples/test_video.mp4
+#   The script will open the video and let you click to define polygons and lines.
+#   Copy the printed coordinates into this file.
+
+cameras:
+  - id: "cam_001"
+    name: "Main Junction North"
+    location: "NH-48 Junction, Zone A"
+
+    # Direction that vehicles should travel (in degrees, 0=right, 90=up, 180=left, 270=down).
+    # Vehicles moving in the opposite direction (±30° tolerance) are flagged as wrong-side.
+    allowed_direction_deg: 90
+    direction_tolerance_deg: 30
+
+    # Virtual stop line — vehicles crossing this line when signal is red = violation.
+    # List of two [x, y] points defining the line across the lane.
+    stop_line: [[200, 600], [900, 600]]
+
+    # ROI for traffic signal light — used to detect red/green state.
+    # Format: [x1, y1, x2, y2]
+    signal_roi: [950, 100, 1050, 250]
+
+    # No-parking zones — list of polygons.
+    # Each polygon is a list of [x, y] points (minimum 3 points).
+    no_parking_zones:
+      - name: "Bus Stop Clearance"
+        polygon: [[50, 400], [300, 400], [300, 700], [50, 700]]
+      - name: "Junction Box"
+        polygon: [[500, 300], [700, 300], [700, 500], [500, 500]]

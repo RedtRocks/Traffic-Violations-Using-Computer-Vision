@@ -1,0 +1,62 @@
+# Violation-Specific Configuration
+# Each violation has an independent confidence threshold for auto-approval
+# and additional parameters specific to its detection logic.
+
+violations:
+
+  helmet:
+    enabled: true
+    auto_approve_confidence: 0.88   # records >= this are auto-flagged; below go to review queue
+    # Head crop region: top fraction of the motorcycle bounding box used as head ROI
+    head_roi_fraction: 0.35         # top 35% of the motorcycle bbox height
+
+  seatbelt:
+    enabled: true
+    auto_approve_confidence: 0.90
+    # Windshield crop region within car bbox
+    windshield_top_fraction: 0.15   # start Y = bbox_top + 15% of bbox height
+    windshield_bottom_fraction: 0.55 # end Y   = bbox_top + 55% of bbox height
+    # Minimum crop size in pixels; crops smaller than this are marked "indeterminate"
+    min_crop_width: 60
+    min_crop_height: 40
+
+  triple_riding:
+    enabled: true
+    auto_approve_confidence: 0.95   # rule-based so always 1.0; threshold is effectively a no-op
+    min_person_overlap_iou: 0.20    # person bbox must overlap motorcycle bbox by at least this IoU
+
+  wrong_side:
+    enabled: true
+    auto_approve_confidence: 0.92
+    min_track_frames: 8             # ignore short tracks (< N frames) to avoid false positives
+    # Direction deviation beyond cameras.yaml tolerance for this many consecutive frames = violation
+    consecutive_wrong_frames: 5
+
+  stop_line:
+    enabled: true
+    auto_approve_confidence: 0.92
+    # How many pixels past the stop line counts as a crossing
+    crossing_margin_px: 5
+
+  red_light:
+    enabled: true
+    auto_approve_confidence: 0.92
+    # Minimum fraction of red pixels in the signal ROI to classify signal as "red"
+    red_pixel_fraction: 0.15
+    # Minimum fraction of green pixels to classify as "green"
+    green_pixel_fraction: 0.10
+
+  parking:
+    enabled: true
+    auto_approve_confidence: 0.95   # rule-based; threshold is a no-op
+    # Vehicle must be stationary inside a no-parking polygon for this many seconds to be flagged
+    dwell_time_seconds: 180         # 3 minutes
+    # A vehicle is "stationary" if its centroid moves less than this many pixels between frames
+    stationary_pixel_threshold: 15
+
+tracker:
+  # ByteTrack parameters
+  track_thresh: 0.50
+  track_buffer: 30                  # frames to keep a lost track alive
+  match_thresh: 0.80
+  frame_rate: 10                    # should match pipeline.yaml target_fps

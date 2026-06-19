@@ -1,0 +1,39 @@
+# Pipeline Configuration
+# Adjust paths and parameters to match your hardware and setup.
+
+input:
+  source: "data/samples/test_video.mp4"   # local file, RTSP URL, or webcam index (0)
+  target_fps: 10                           # process this many frames per second (skip others)
+  resize_width: 1280                       # resize frames before inference (0 = no resize)
+
+models:
+  vehicle_detector: "models/weights/yolov8m.pt"
+  plate_detector: "models/weights/plate_yolov8.pt"
+  helmet_classifier: "models/weights/helmet_yolov8.pt"
+  seatbelt_classifier: "models/seatbelt_classifier/seatbelt_cnn.pth"
+
+inference:
+  device: "cpu"                   # "cpu" or "cuda" or "cuda:0"
+  vehicle_conf: 0.45              # minimum detection confidence for vehicles/persons
+  plate_conf: 0.50                # minimum confidence for plate localization
+  helmet_conf: 0.55               # minimum confidence for helmet classifier
+  seatbelt_conf: 0.55             # minimum confidence for seatbelt classifier
+  nms_iou: 0.45
+
+preprocessing:
+  clahe_clip_limit: 2.0
+  clahe_tile_size: 8
+  blur_threshold: 100.0           # Laplacian variance below this → frame is blurry
+  apply_rain_filter: false        # set true if input is rainy footage
+
+evidence:
+  save_dir: "artifacts/evidence"
+  jpeg_quality: 85
+  max_per_plate_per_day: 5        # deduplication cap per plate per calendar day
+
+database:
+  path: "artifacts/violations.db"
+
+logging:
+  level: "INFO"                   # DEBUG | INFO | WARNING
+  log_file: "artifacts/run.log"

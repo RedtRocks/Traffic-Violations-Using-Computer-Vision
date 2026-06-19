@@ -1,0 +1,125 @@
+# Traffic Violation Detection System
+
+Automated photo/video identification and classification of traffic violations using computer vision.
+
+## Violations Detected
+
+| Violation | Approach |
+|-----------|----------|
+| Helmet non-compliance | YOLOv8 classifier on head crop |
+| Seatbelt non-compliance | Binary CNN on windshield crop |
+| Triple riding | Person-count rule on motorcycle bbox |
+| Wrong-side driving | Direction vector + track history |
+| Stop-line violation | Virtual line + signal state (HSV) |
+| Red-light violation | Signal ROI + vehicle position |
+| Illegal parking | No-parking polygon + dwell timer |
+
+## Setup
+
+```bash
+# 1. Create virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux/macOS
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Download pretrained model weights
+python scripts/download_models.py
+
+# 4. Set up camera zones (run once per camera)
+python scripts/draw_zones.py --video data/samples/test_video.mp4
+# Copy the printed YAML into configs/cameras.yaml
+
+# 5. Configure pipeline
+# Edit configs/pipeline.yaml  → set input source, model paths, device
+# Edit configs/violations.yaml → adjust thresholds if needed
+```
+
+## Running the Pipeline
+
+```bash
+# Process a video file
+python app.py --video data/samples/test_video.mp4
+
+# Webcam
+python app.py --video 0
+
+# RTSP stream
+python app.py --video rtsp://192.168.1.10/stream
+
+# Show annotated output window
+python app.py --video data/samples/test_video.mp4 --show
+
+# Dry run (preprocessing only, no detection)
+python app.py --video data/samples/test_video.mp4 --dry-run
+```
+
+## Dashboard
+
+```bash
+python app.py --dashboard
+# Opens Streamlit dashboard at http://localhost:8501
+```
+
+## Running Tests
+
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+## Project Structure
+
+```
+traffic_violation_system/
+├── configs/           # All tunable parameters (YAML — no hardcoded values)
+├── src/
+│   ├── preprocessing/ # CLAHE, blur detection, rain filter
+│   ├── detection/     # YOLOv8 vehicle + plate detectors
+│   ├── tracking/      # ByteTrack wrapper with centroid history
+│   ├── violations/    # One file per violation type + classifier.py
+│   ├── ocr/           # PaddleOCR plate reader
+│   ├── evidence/      # Annotated image + JSON saver
+│   ├── database/      # SQLite schema + repository
+│   ├── analytics/     # Aggregation queries for dashboard
+│   └── evaluation/    # Metrics: mAP, F1, OCR accuracy, FPS
+├── pipelines/         # Main frame loop (orchestrator)
+├── dashboard/         # Streamlit analytics dashboard
+├── scripts/           # Setup tools (download models, draw zones)
+├── models/weights/    # .pt files (gitignored — download separately)
+├── data/samples/      # Short test clips
+├── artifacts/evidence/# Saved violation images + JSON (runtime)
+├── tests/             # Pytest unit tests
+└── notebooks/         # Training (seatbelt CNN) + evaluation
+```
+
+## Known Limitations
+
+- **Seatbelt**: Marked `indeterminate` when windshield crop is too small or model is not trained. A small labelled dataset (~300 windshield crops) is required to train the binary CNN.
+- **Auto-rickshaw**: Not in COCO — pretrained model uses `motorcycle` as a proxy. Fine-tune on IDD dataset for improved accuracy.
+- **Rain handling**: Classical median blur + sharpen only. Does not fully restore heavily rain-obscured frames.
+- **Signal detection**: HSV-based; may misclassify under overexposed or nighttime conditions. Combine with vehicle-position heuristic for robustness.
+- **Multiple cameras**: Supported via `--camera <id>` argument + separate entries in `cameras.yaml`. Concurrent streams require running multiple processes.
+
+## Seatbelt Model Training
+
+See `notebooks/02_seatbelt_training.ipynb`.
+
+Collect windshield crops into:
+```
+data/seatbelt_crops/seatbelt/       # images with seatbelt worn
+data/seatbelt_crops/no_seatbelt/    # images without seatbelt
+```
+Then run the notebook. Output: `models/seatbelt_classifier/seatbelt_cnn.pth`
+
+## Evaluation
+
+See `notebooks/03_evaluation.ipynb`.
+
+Metrics computed:
+- mAP@0.5 — vehicle and plate detectors
+- Precision / Recall / F1 — per violation type
+- OCR exact-match accuracy
+- FPS throughput
