@@ -61,7 +61,7 @@ def _count_consecutive_wrong(
         dx = history[i][0] - history[i - 1][0]
         dy = history[i][1] - history[i - 1][1]
         if abs(dx) < 2 and abs(dy) < 2:
-            # Stationary — skip
+            # Stationary â€” skip
             continue
         # Image coords: y increases downward, so flip dy for standard angles
         angle = math.degrees(math.atan2(-dy, dx)) % 360

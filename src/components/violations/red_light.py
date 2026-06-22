@@ -2,7 +2,7 @@
 Red-light violation detector.
 Rule: signal is "red" AND vehicle centroid is past the stop line AND vehicle is moving.
 
-This is a stricter version of stop_line.py — it additionally confirms the signal
+This is a stricter version of stop_line.py â€” it additionally confirms the signal
 is actively red (not just unknown) and that the vehicle is in motion.
 """
 

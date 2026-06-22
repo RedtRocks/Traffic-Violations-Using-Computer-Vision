@@ -16,7 +16,7 @@ Vehicle filtering:
   Only "car", "truck", and "bus" are checked. "person" is explicitly excluded
   because a pedestrian detected on the road is NOT inside a vehicle. Checking
   seatbelt compliance on a person standing outside a car would always fire a
-  false positive — you cannot wear a seatbelt while standing on the road.
+  false positive â€” you cannot wear a seatbelt while standing on the road.
   The crop ROI (15%-55% of the bounding box height) targets the windshield/
   torso region of the *vehicle*, not of a standalone person.
 
@@ -104,7 +104,7 @@ def _load_yolo_model(model_path: str, device: str):
         from ultralytics import YOLO
         
         model = YOLO(model_path, task="classify")
-        # Warm up device assignment — ultralytics handles device internally
+        # Warm up device assignment â€” ultralytics handles device internally
         # via predict() kwargs; store device for later use.
         model._seatbelt_device = device
         log.info("Seatbelt YOLO model loaded from %s (device=%s)", model_path, device)
@@ -148,7 +148,7 @@ class SeatbeltChecker:
         violations: list[ViolationRecord] = []
 
         # Only check enclosed vehicles: car, truck, bus.
-        # "person" is deliberately excluded — a person detected by the vehicle
+        # "person" is deliberately excluded â€” a person detected by the vehicle
         # detector on the road is a pedestrian, not a car occupant. Running the
         # seatbelt model on a pedestrian's torso crop would always produce a
         # false positive (they have no seatbelt to wear outside a vehicle).
@@ -223,7 +223,7 @@ class SeatbeltChecker:
                     violations.append(route(record))
                     state.seatbelt_violation_emitted = True
             else:
-                # No TrackMemory — emit immediately (single-frame mode, e.g. cloud demo).
+                # No TrackMemory â€” emit immediately (single-frame mode, e.g. cloud demo).
                 if label == "no_seatbelt":
                     record = ViolationRecord(
                         violation_type="seatbelt",
@@ -253,7 +253,7 @@ class SeatbeltChecker:
         resolved = _download_hf_model(cache_path)
         if resolved is None:
             log.warning(
-                "Seatbelt model unavailable — all results will be 'indeterminate'."
+                "Seatbelt model unavailable â€” all results will be 'indeterminate'."
             )
             return None
         return _load_yolo_model(resolved, self.device)

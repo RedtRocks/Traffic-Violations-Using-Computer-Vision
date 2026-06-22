@@ -66,7 +66,7 @@ class HelmetChecker:
         # Run the full-frame helmet model once.
         results = self.model.predict(source=frame, conf=self.conf, device=self.device, verbose=False)
         if not results or not results[0].boxes:
-            # No helmet detections — mark all needing-check motorcycles as "ok".
+            # No helmet detections â€” mark all needing-check motorcycles as "ok".
             if track_memory is not None:
                 for m in needs_check:
                     state = track_memory.get_or_create(m.track_id, "motorcycle")
@@ -108,7 +108,7 @@ class HelmetChecker:
                         state.helmet_status = "ok"
                         state.helmet_confidence = 0.0
                         state.helmet_bbox = None
-                        # Reset confirm counter on a clean detection — violation is no longer present.
+                        # Reset confirm counter on a clean detection â€” violation is no longer present.
                         state.helmet_confirm_count = 0
 
                 # Emit violation only once per track, only after min_confirm cycles agree.
@@ -127,7 +127,7 @@ class HelmetChecker:
                     violations.append(route(record))
                     state.helmet_violation_emitted = True
             else:
-                # No TrackMemory — emit immediately (single-frame mode, e.g. cloud demo).
+                # No TrackMemory â€” emit immediately (single-frame mode, e.g. cloud demo).
                 if conf is not None:
                     record = ViolationRecord(
                         violation_type="helmet",
