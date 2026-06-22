@@ -1,4 +1,4 @@
-﻿"""
+"""
 Traffic Violation Detection System — Interactive Demo
 
 Tabs:
@@ -89,11 +89,22 @@ def _device() -> str:
 # ─────────────────────────────────────────────
 @st.cache_resource(show_spinner="Loading detection models…")
 def load_models(device: str):
-    from src.components.detection.vehicle_detector import VehicleDetector
-    from src.components.detection.plate_detector import PlateDetector
-    from src.components.violations.helmet import HelmetChecker
-    from src.components.violations.seatbelt import SeatbeltChecker
-    from src.components.ocr.plate_reader import PlateReader
+    try:
+        from src.components.detection.vehicle_detector import VehicleDetector
+        from src.components.detection.plate_detector import PlateDetector
+        from src.components.violations.helmet import HelmetChecker
+        from src.components.violations.seatbelt import SeatbeltChecker
+        from src.components.ocr.plate_reader import PlateReader
+    except Exception as _e:
+        import sys
+        st.error(
+            f"**Failed to load detection modules** — this usually means a Python version "
+            f"mismatch on Streamlit Cloud.\n\n"
+            f"**Fix:** Go to your app's ⚙️ Settings → Advanced → Python version → select **3.11**"
+            f", then click *Save* and *Reboot*.\n\n"
+            f"Error detail: `{_e}`"
+        )
+        st.stop()
 
     missing = [p.name for p in (VEHICLE_W, HELMET_W, PLATE_W) if not p.exists()]
     if missing:
