@@ -129,3 +129,7 @@ secrets.json
 .coverage
 coverage.xml
 htmlcov/
+
+# Ignore docs except context.md
+docs/*.md
+!docs/context.md
