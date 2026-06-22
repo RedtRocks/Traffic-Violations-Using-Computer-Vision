@@ -23,9 +23,9 @@ import numpy as np
 import streamlit as st
 
 # Streamlit Cloud mounts the app as a read-only filesystem except for /tmp.
-# Setting YOLO_CONFIG_DIR before any ultralytics import prevents the
-# "config directory not writable" warning and avoids a second fallback lookup.
-os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/Ultralytics")
+# Ultralytics appends its own 'Ultralytics' subdir to YOLO_CONFIG_DIR,
+# so setting it to /tmp results in the correct writable path: /tmp/Ultralytics.
+os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp")
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
