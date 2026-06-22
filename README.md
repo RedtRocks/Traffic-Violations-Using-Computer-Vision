@@ -130,27 +130,29 @@ pytest tests/ -v
 
 ```
 traffic_violation_system/
-├── src/configs/           # All tunable parameters (YAML — no hardcoded values)
-│   ├── pipeline.yaml  #   device, model paths, FPS target
-│   ├── cameras.yaml   #   stop line, signal ROI, parking zones per camera
-│   └── violations.yaml#   thresholds, refresh_interval, min_confirm_frames
 ├── src/
-│   ├── preprocessing/ # CLAHE, blur detection, rain filter
-│   ├── detection/     # YOLO11 vehicle + YOLOv8 plate/helmet detectors
-│   ├── tracking/      # Self-contained IoU tracker + TrackMemory caching
-│   ├── violations/    # One file per violation type + classifier.py
-│   ├── ocr/           # EasyOCR plate reader
-│   ├── evidence/      # Annotated image + JSON saver
+│   ├── configs/       # All tunable parameters (YAML — no hardcoded values)
+│   │   ├── pipeline.yaml  #   device, model paths, FPS target
+│   │   ├── cameras.yaml   #   stop line, signal ROI, parking zones per camera
+│   │   └── violations.yaml#   thresholds, refresh_interval, min_confirm_frames
+│   ├── components/    # Core pipeline components
+│   │   ├── preprocessing/ # CLAHE, blur detection, rain filter
+│   │   ├── detection/     # YOLO11 vehicle + YOLOv8 plate/helmet detectors
+│   │   ├── tracking/      # Self-contained IoU tracker + TrackMemory caching
+│   │   ├── violations/    # One file per violation type + classifier.py
+│   │   ├── ocr/           # EasyOCR plate reader
+│   │   └── evidence/      # Annotated image + JSON saver
 │   ├── database/      # SQLite schema + repository
 │   ├── analytics/     # Aggregation queries for dashboard
-│   └── evaluation/    # Metrics: mAP, F1, OCR accuracy, FPS
-├── pipelines/         # Main frame loop (orchestrator)
-├── dashboard/         # Local Streamlit analytics dashboard
+│   ├── evaluation/    # Metrics: mAP, F1, OCR accuracy, FPS
+│   ├── pipelines/     # Main frame loop (orchestrator)
+│   └── dashboard/     # Local Streamlit analytics dashboard
 ├── scripts/           # Setup tools (download models, draw zones)
 ├── models/weights/    # .pt files (gitignored — download separately)
 ├── data/samples/      # Short test clips and reference images
 ├── artifacts/evidence/# Saved violation images + JSON (runtime, gitignored)
 ├── tests/             # Pytest unit tests (36/36 passing)
+├── docs/              # Documentation files
 └── notebooks/         # Colab training notebook
 ```
 
