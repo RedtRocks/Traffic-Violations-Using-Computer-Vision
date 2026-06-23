@@ -470,6 +470,17 @@ def _draw_zone_preview(frame, zones):
         cy = int(pts[:, 1].mean())
         cv2.putText(img, f"NO PARK: {zone['name']}", (cx - 40, cy),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 220), 2)
+    direction = zones.get("allowed_direction")
+    if direction is not None:
+        h, w = img.shape[:2]
+        cx, cy = w // 2, h // 2
+        rad = np.radians(direction)
+        length = min(w, h) // 4
+        dx = int(np.cos(rad) * length)
+        dy = int(np.sin(rad) * length)
+        cv2.arrowedLine(img, (cx, cy), (cx + dx, cy + dy), (255, 0, 255), 4, tipLength=0.2)
+        cv2.putText(img, f"LEGAL DIRECTION: {direction} deg", (cx - 50, cy - 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
     return img
 
 
@@ -489,7 +500,7 @@ def tab_camera_setup():
     st.header("🗺️ Camera Zone Setup")
     st.markdown(
         "Define zones on a reference frame from your camera. "
-        "These zones enable **stop-line**, **signal/red-light**, and **parking** violation detection."
+        "These zones enable **stop-line**, **signal/red-light**, **parking**, and **wrong-side** violation detection."
     )
 
     ref_file = st.file_uploader(
@@ -559,13 +570,26 @@ def tab_camera_setup():
                 zones["stop_line"]     = None
                 zones["signal_roi"]    = None
                 zones["parking_zones"] = []
+                zones["allowed_direction"] = None
                 st.info("All zones cleared.")
+
+            st.divider()
+            
+            # ── Legal Traffic Direction ──────────────────────────────────────────
+            st.subheader("4️⃣ Legal Traffic Direction")
+            st.caption("Angle (in degrees) that vehicles are allowed to travel. (0=Right, 90=Down, 180=Left, 270=Up)")
+            c1, c2 = st.columns([3, 1])
+            direction_deg = c1.slider("Allowed Direction", 0, 359, 180, key="dir_deg")
+            if c2.button("✅ Set Direction"):
+                zones["allowed_direction"] = direction_deg
+                st.success(f"Direction {direction_deg}° saved.")
 
             # Zone status summary
             st.divider()
             st.subheader("Current zones")
             st.write("Stop line:", "✅" if zones["stop_line"] else "❌ not set")
             st.write("Signal ROI:", "✅" if zones["signal_roi"] else "❌ not set")
+            st.write("Legal Direction:", f"✅ ({zones['allowed_direction']}°)" if zones.get("allowed_direction") is not None else "❌ not set")
             for z in zones["parking_zones"]:
                 st.write(f"Parking zone — {z['name']}: ✅ ({len(z['polygon'])} pts)")
 
@@ -577,7 +601,7 @@ def tab_camera_setup():
     else:
         # Show current zone status even without uploading a frame
         st.info("Upload a reference frame to define and preview zones.")
-        if any([zones.get("stop_line"), zones.get("signal_roi"), zones.get("parking_zones")]):
+        if any([zones.get("stop_line"), zones.get("signal_roi"), zones.get("parking_zones"), zones.get("allowed_direction") is not None]):
             st.markdown("**Zones already configured in this session:**")
             st.json(zones)
 
