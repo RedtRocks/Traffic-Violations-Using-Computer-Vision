@@ -294,6 +294,55 @@ def check_parking_violations(sampled_detections, parking_zones, min_frames: int 
     return results
 
 
+def check_wrong_side_violations(sampled_detections, allowed_direction_deg, min_frames: int = 2):
+    """
+    Returns vehicles moving against the allowed direction vector.
+    Requires linking centroids across frames to determine motion vector.
+    """
+    vehicle_classes = {"car", "truck", "bus", "motorcycle", "auto-rickshaw"}
+    tracks = []
+    results = []
+    
+    rad = math.radians(allowed_direction_deg)
+    allowed_vec = (math.cos(rad), math.sin(rad))
+
+    for frame_idx, dets in sampled_detections:
+        for d in dets:
+            if d.class_name not in vehicle_classes:
+                continue
+            cx = (d.bbox[0] + d.bbox[2]) / 2
+            cy = (d.bbox[1] + d.bbox[3]) / 2
+            
+            matched = None
+            for t in tracks:
+                dx = cx - t["centroids"][-1][0]
+                dy = cy - t["centroids"][-1][1]
+                if math.sqrt(dx * dx + dy * dy) < 100:  # generous tracking radius
+                    matched = t
+                    break
+                    
+            if matched:
+                matched["centroids"].append((cx, cy))
+                matched["bbox"] = d.bbox
+                if len(matched["centroids"]) >= min_frames and not matched.get("flagged"):
+                    first_pt = matched["centroids"][0]
+                    last_pt = matched["centroids"][-1]
+                    vec_x = last_pt[0] - first_pt[0]
+                    vec_y = last_pt[1] - first_pt[1]
+                    mag = math.sqrt(vec_x**2 + vec_y**2)
+                    if mag > 20: # needs to have actually moved
+                        vec_x /= mag
+                        vec_y /= mag
+                        dot = vec_x * allowed_vec[0] + vec_y * allowed_vec[1]
+                        # If dot product is negative, it's moving in the opposite direction
+                        if dot < -0.5: 
+                            results.append((frame_idx, d.class_name, d.bbox))
+                            matched["flagged"] = True
+            else:
+                tracks.append({"centroids": [(cx, cy)], "bbox": d.bbox, "class": d.class_name})
+    return results
+
+
 def _show_results(dets, violations, plates, col):
     col.metric("Road users detected", len(dets))
     col.metric("Violations flagged", len(violations))
@@ -397,10 +446,13 @@ def _process_video(video_path: str, models, zones):
     # ── Geometry violations ──────────────────────────────────────────────
     stop_violations  = []
     park_violations  = []
+    wrong_violations = []
     if zones.get("stop_line"):
         stop_violations = check_stop_line_violations(sampled_detections, zones["stop_line"])
     if zones.get("parking_zones"):
         park_violations = check_parking_violations(sampled_detections, zones["parking_zones"])
+    if zones.get("allowed_direction") is not None:
+        wrong_violations = check_wrong_side_violations(sampled_detections, zones["allowed_direction"])
 
     st.success(f"Processed {processed} sampled frames.")
 
@@ -414,11 +466,12 @@ def _process_video(video_path: str, models, zones):
 
     # Summary
     st.subheader("Summary")
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Visual violations", len(all_violations))
-    c2.metric("Unique plates read", len(all_plates))
-    c3.metric("Stop-line crossings", len(stop_violations))
+    c2.metric("Unique plates", len(all_plates))
+    c3.metric("Stop-line violations", len(stop_violations))
     c4.metric("Parking violations", len(park_violations))
+    c5.metric("Wrong-side violations", len(wrong_violations))
 
     if all_violations:
         st.markdown("**Visual violations (helmet / seatbelt / triple riding)**")
@@ -437,6 +490,12 @@ def _process_video(video_path: str, models, zones):
         st.markdown("**Parking violations detected**")
         st.dataframe(
             [{"zone": z, "vehicle": cl} for (z, cl, _) in park_violations],
+            use_container_width=True,
+        )
+    if wrong_violations:
+        st.markdown("**Wrong-side driving detected**")
+        st.dataframe(
+            [{"frame": f, "vehicle": cl} for (f, cl, _) in wrong_violations],
             use_container_width=True,
         )
     if all_plates:
