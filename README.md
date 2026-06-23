@@ -7,7 +7,7 @@ Automated photo/video identification and classification of traffic violations us
 | Violation | Approach |
 |-----------|----------|
 | Helmet non-compliance | Full-frame YOLO detector → head associated to motorcycle track via upward-expanded bbox |
-| Seatbelt non-compliance | YOLO11s classify on windshield crop (car/truck/bus only) — auto-downloaded from HuggingFace |
+| Seatbelt non-compliance | YOLO11s classify on windshield crop (car/truck/bus only) — locally fine-tuned for overhead camera angles |
 | Triple riding | Person-containment rule on motorcycle bbox (≥ 3 persons → violation) |
 | Wrong-side driving | Direction vector + centroid track history |
 | Stop-line violation | Virtual line + signal state (HSV) |
@@ -21,7 +21,7 @@ Automated photo/video identification and classification of traffic violations us
 | Vehicle + person + road users | `models/weights/yolo11s.pt` | `python scripts/download_models.py` (auto) |
 | Helmet / no-helmet | `models/weights/helmet_yolov8.pt` | Train on Colab → [docs/COLAB_GUIDE.md](docs/COLAB_GUIDE.md) |
 | License plate | `models/weights/plate_yolov8.pt` | Train on Colab → [docs/COLAB_GUIDE.md](docs/COLAB_GUIDE.md) |
-| Seatbelt classifier | `models/weights/seatbelt_yolov11s.pt` | **Auto-downloaded from HuggingFace** on first run |
+| Seatbelt classifier | `models/weights/seatbelt_finetuned.pt` | **Locally fine-tuned** via `notebooks/finetune_seatbelt_local.py` |
 
 Download the training datasets locally with `python scripts/download_datasets.py --all`
 (needs a free Roboflow or Kaggle key), or let the Colab notebook pull them.
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 # 4. Download pretrained model weights
 python scripts/download_models.py
-# The seatbelt model downloads automatically from HuggingFace on first pipeline run.
+# The seatbelt model was locally fine-tuned (seatbelt_finetuned.pt).
 
 # 5. Set up camera zones (run once per camera)
 python scripts/draw_zones.py --video data/samples/test_video.mp4
@@ -91,7 +91,7 @@ An interactive Streamlit app with 4 tabs:
 | 🎯 Detect Violations | Upload image or video → runs helmet, seatbelt, triple riding, plates. Runs stop-line + parking checks too if camera zones are configured. |
 | 🗺️ Camera Setup | Define stop line, signal ROI, and no-parking zones on a reference frame using coordinate inputs with live preview. |
 | ℹ️ How It Works | Full explainer for all 8 pipeline stages and all 7 violation types. |
-| 🖼️ Try a Sample | Run detection on pre-loaded footage from `data/samples/`. |
+| 🖼️ Try a Sample | Interactive guided demo running detection on pre-loaded footage, complete with legend and pre-configured zones. |
 
 ```bash
 # Run the cloud demo locally

@@ -23,10 +23,10 @@ A real-world deployable prototype for **Automated Photo Identification and Class
 | Vehicle/person model | `models/weights/yolo11s.pt` — COCO pretrained ✅ |
 | Helmet model | `models/weights/helmet_yolov8.pt` — **TRAINED on Colab T4** ✅ |
 | Plate model | `models/weights/plate_yolov8.pt` — **TRAINED on Colab T4** ✅ |
-| Seatbelt model | `models/weights/seatbelt_yolov11s.pt` — **RISEF/yolov11s-seatbelt from HuggingFace** ✅ auto-downloaded |
+| Seatbelt model | `models/weights/seatbelt_finetuned.pt` — **Locally Fine-Tuned** on overhead CCTV crops (RTX 3050 Ti) ✅ |
 | OCR | EasyOCR (GPU via torch) ✅ |
 | Docker | `Dockerfile` + `docker-compose.yml` present — CPU image, GPU note inside |
-| Cloud Demo | `streamlit_app.py` — 4-tab interactive UI (Detect, Camera Setup, How It Works, Try Sample) |
+| Cloud Demo | `streamlit_app.py` — 4-tab interactive UI (Detect, Camera Setup, How It Works, Try Sample). Includes guided, pre-configured scene demo. |
 | Tests | 36/36 passing (`pytest tests/ -q`) |
 | Git | `main` branch on `github.com/raunaqmittal/Traffic-Violations-Using-Computer-Vision` |
 
@@ -47,7 +47,7 @@ A real-world deployable prototype for **Automated Photo Identification and Class
 | Violation | Detection Method |
 |-----------|-----------------|
 | Helmet non-compliance | Full-frame helmet YOLO → `rider_no_helmet` heads associated to motorcycle tracks via upward-expanded bbox containment. NOT a head-crop (COCO motorcycle boxes exclude the rider's head). |
-| Seatbelt non-compliance | YOLO11s classifier (`seatbelt_yolov11s.pt`) on windshield crop of **car/truck/bus bbox only** — pedestrians explicitly excluded. Marks `indeterminate` if crop too small. Requires 2 confirm cycles before violation is emitted. |
+| Seatbelt non-compliance | YOLO11s classifier (`seatbelt_finetuned.pt`) on windshield crop of **car/truck/bus bbox only**. Uses aspect-ratio geometric check to skip side-views (where windshields aren't visible). Marks `indeterminate` if crop too small. Requires 2 confirm cycles before violation is emitted. |
 | Triple riding | Rule: count persons whose bbox is ≥ 50% **contained** (not IoU) in motorcycle bbox; ≥ 3 → violation |
 | Wrong-side driving | Rule: centroid direction vector vs `allowed_direction_deg` for N consecutive frames |
 | Stop-line violation | Rule: vehicle centroid past virtual line when signal is red/unknown |
@@ -84,7 +84,7 @@ Violation Detection Engine
 Violation Classifier & Confidence Scorer
   (≥ threshold → auto_flagged | below → review | unusable → indeterminate)
       ↓
-License Plate Detection + EasyOCR (triggered only on violation, result cached per vehicle)
+License Plate Detection + EasyOCR (triggered only on violation, uses geometry constraints to filter shop signs)
       ↓
 Evidence Generator  (annotated JPEG + JSON sidecar per violation)
       ↓
